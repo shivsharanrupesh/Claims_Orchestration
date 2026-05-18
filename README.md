@@ -26,6 +26,14 @@
 
 ## Architecture overview
 
+<img width="667" height="615" alt="image" src="https://github.com/user-attachments/assets/03a6fb5b-4274-425d-94f6-bec2d0782ff9" />
+
+<img width="673" height="852" alt="image" src="https://github.com/user-attachments/assets/9e0fe5f5-3704-4802-b1be-4481aff9cb13" />
+
+<img width="673" height="734" alt="image" src="https://github.com/user-attachments/assets/02a84a0f-e323-42b7-9bfe-f2543f816ad3" />
+
+
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │               Claimant channels                         │
