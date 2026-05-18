@@ -1,0 +1,13 @@
+{
+  "policy_number": "POL-2024-00123",
+  "claimant_id": "CLT-98765",
+  "channel": "web",
+  "incident_summary": "My 2022 Honda Civic was rear-ended at a red light on Yonge Street and Bloor Street in Toronto on November 12th at approximately 6:30 PM. The other driver admitted fault at the scene. There is significant damage to the rear bumper, trunk lid, and taillights. Police Report: 2024-TPS-44812. No injuries. Vehicle towed to nearest garage.",
+  "photo_urls": [
+    "https://claimstorage.blob.core.windows.net/claim-documents/CLT-98765/photo_rear_1.jpg",
+    "https://claimstorage.blob.core.windows.net/claim-documents/CLT-98765/photo_scene.jpg"
+  ],
+  "document_urls": [
+    "https://claimstorage.blob.core.windows.net/claim-documents/CLT-98765/police_report.pdf"
+  ]
+}

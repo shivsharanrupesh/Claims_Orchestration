@@ -1,0 +1,101 @@
+version: "3.9"
+# Local development — uses real Azure services for OpenAI, Cosmos, Blob, Redis
+# but runs MCP servers and the API locally.
+# Set up your .env file first, then: docker compose up
+
+services:
+  # ── ChromaDB vector store (replaces Azure AI Search) ──────────────
+  chromadb:
+    image: chromadb/chroma:0.5.0
+    ports: ["8000:8000"]
+    volumes: ["./data/chroma:/chroma/chroma"]
+    environment:
+      CHROMA_SERVER_AUTHN_CREDENTIALS_FILE: ""
+      ALLOW_RESET: "true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 10s
+
+  # ── MCP servers ────────────────────────────────────────────────────
+  claims-mcp:
+    build: .
+    environment:
+      SERVICE_MODULE: mcp_servers.claims_mcp.server
+    env_file: .env
+    ports: ["8001:8000"]
+    depends_on: {chromadb: {condition: service_healthy}}
+
+  policy-mcp:
+    build: .
+    environment:
+      SERVICE_MODULE: mcp_servers.policy_mcp.server
+    env_file: .env
+    ports: ["8002:8000"]
+
+  fraud-mcp:
+    build: .
+    environment:
+      SERVICE_MODULE: mcp_servers.fraud_mcp.server
+      CHROMA_HOST: http://chromadb
+      CHROMA_PORT: "8000"
+    env_file: .env
+    ports: ["8003:8000"]
+    depends_on: {chromadb: {condition: service_healthy}}
+
+  workforce-mcp:
+    build: .
+    environment:
+      SERVICE_MODULE: mcp_servers.workforce_mcp.server
+    env_file: .env
+    ports: ["8004:8000"]
+
+  slack-mcp:
+    build: .
+    environment:
+      SERVICE_MODULE: mcp_servers.slack_mcp.server
+    env_file: .env
+    ports: ["8005:8000"]
+
+  # ── FNOL API ───────────────────────────────────────────────────────
+  api:
+    build: .
+    environment:
+      SERVICE_MODULE: api.main
+      CHROMA_HOST: http://chromadb
+      CHROMA_PORT: "8000"
+      MCP_CLAIMS_URL: http://claims-mcp:8000
+      MCP_POLICY_URL: http://policy-mcp:8000
+      MCP_FRAUD_URL: http://fraud-mcp:8000
+      MCP_WORKFORCE_URL: http://workforce-mcp:8000
+      MCP_SLACK_URL: http://slack-mcp:8000
+    env_file: .env
+    ports: ["8080:8000"]
+    depends_on: [claims-mcp, policy-mcp, fraud-mcp, workforce-mcp, slack-mcp]
+
+  # ── Workers ────────────────────────────────────────────────────────
+  intake-worker:
+    build: .
+    command: ["python", "-m", "src.workers.intake_worker"]
+    environment:
+      MCP_CLAIMS_URL: http://claims-mcp:8000
+      MCP_POLICY_URL: http://policy-mcp:8000
+    env_file: .env
+    depends_on: [api]
+
+  decision-worker:
+    build: .
+    command: ["python", "-m", "src.workers.decision_worker"]
+    environment:
+      MCP_FRAUD_URL: http://fraud-mcp:8000
+      MCP_WORKFORCE_URL: http://workforce-mcp:8000
+      MCP_SLACK_URL: http://slack-mcp:8000
+    env_file: .env
+    depends_on: [intake-worker]
+
+  settlement-worker:
+    build: .
+    command: ["python", "-m", "src.workers.settlement_worker"]
+    environment:
+      MCP_CLAIMS_URL: http://claims-mcp:8000
+    env_file: .env
+    depends_on: [decision-worker]
